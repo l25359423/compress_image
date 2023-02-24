@@ -40,7 +40,7 @@ class CompressImage(object):
             if image.width > max_width:
                 scale = max_width / image.width
                 new_size = (int(image.width * scale), int(image.height * scale))
-                image = image.resize(new_size, resample=Image.Resampling.LANCZOS)
+                image = image.resize(new_size, resample=Image.LANCZOS)
             if image.mode == 'CMYK':
                 image = image.convert('RGB')
 
