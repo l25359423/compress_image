@@ -68,6 +68,7 @@ class CompressImage(object):
                     print("File Size: %s" % str(os.path.getsize(output_file_path) / 1000))
                     break
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Compress PNG images in a directory')
     parser.add_argument('input', metavar='input', type=str, help='the input directory path')
