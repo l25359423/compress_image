@@ -17,7 +17,7 @@ class CompressImage(object):
     def get_tinypng_key(cls):
         if cls.tinypng_use_number == 500:
             cls.tinypng_key_index += 1
-            if cls.tinypng_key_index >= len(tinypng_keys-1):
+            if cls.tinypng_key_index >= len(tinypng_keys)-1:
                 print("tinypng quota used up, exit")
                 sys.exit()
         return tinypng_keys[cls.tinypng_key_index]
