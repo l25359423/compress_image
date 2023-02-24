@@ -11,7 +11,7 @@ from tinypng_keys import tinypng_keys
 
 class CompressImage(object):
     tinypng_key_index = 0
-    tinypng_use_number = 0
+    tinypng_use_number = 282
 
     @classmethod
     def get_tinypng_key(cls):
@@ -30,9 +30,21 @@ class CompressImage(object):
         print("Tinypng Key: " + tinypng_key)
         print("Tinypng Used: " + (str)(cls.tinypng_use_number))
         tinify.key = tinypng_key
-        source = tinify.from_file(file_path)
-        source.to_file(file_path)
+        try:
+            source = tinify.from_file(file_path)
+            source.to_file(file_path)
+        except tinify.AccountError as e:
+            if "limit has been exceeded" in str(e):
+                cls.tinypng_key_index += 1
+                cls.tinypng_use_number = 0
+                if cls.tinypng_key_index >= len(tinypng_keys) - 1:
+                    print("tinypng quota used up, exit")
+                    sys.exit()
+                return cls.compress_by_tinypng(file_path)
+        except tinify.ClientError:
+            return False
         cls.tinypng_use_number += 1
+        return True
 
     @classmethod
     def compress_image(cls, input_file_path, output_file_path,
@@ -64,10 +76,25 @@ class CompressImage(object):
                 if quality > 80:
                     quality -= 10
                 else:
-                    print("File Size: %s" % str(file_size/1000))
-                    cls.compress_by_tinypng(output_file_path)
-                    print("File Size: %s" % str(os.path.getsize(output_file_path) / 1000))
                     break
+        if file_size > int(max_size):
+            print("File Size: %s" % str(file_size / 1000))
+            try:
+                cls.compress_by_tinypng(output_file_path)
+            except tinify.AccountError as e:
+                if "limit has been exceeded" in str(e):
+                    cls.tinypng_key_index += 1
+                    cls.tinypng_use_number = 0
+                    if cls.tinypng_key_index >= len(tinypng_keys) - 1:
+                        print("tinypng quota used up, exit")
+                        sys.exit()
+                    cls.compress_by_tinypng(output_file_path)
+                raise str(e)
+            except tinify.ClientError:
+                return False
+            print("File Size: %s" % str(os.path.getsize(output_file_path) / 1000))
+        os.remove(input_file_path)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Compress PNG images in a directory')
@@ -94,8 +121,11 @@ if __name__ == '__main__':
 
         output_file_path = path.join(args.output, filename)
 
-        CompressImage.compress_image(input_file_path, output_file_path, args.max_width, "15000")
-        os.remove(input_file_path)
+        try:
+            CompressImage.compress_image(input_file_path, output_file_path,
+                                         args.max_width, "15000")
+        except Exception as e:
+            print("Error: " + str(e))
         print(f'{output_file_path}')
         print("-"*40)
         print("")
